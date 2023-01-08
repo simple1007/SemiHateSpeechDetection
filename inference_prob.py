@@ -1,34 +1,54 @@
 import sys
-sys.path.append('D:/SentenceSimilarityPredict/HeadTail_Tokenizer_POSTagger')
-
+# sys.path.append('D:/SentenceSimilarityPredict/HeadTail_Tokenizer_POSTagger')
+# sys.path.append('D:/SentenceSimilarityPredict')
+import os
+os.environ['ROOT']='D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger'
+sys.path.append('D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger')
 from utils.utils import cos_sim#cos_sim_per as cos_sim
-# from konlpy.tag import Okt
-from HeadTail_Tokenizer_POSTagger.head_tail import analysis
+from konlpy.tag import Okt
+from HeadTail_Tokenizer_POSTagger.head_tail_distil import analysis
 
 import tensorflow as tf
 import numpy as np
 import sentencepiece as spm
 
-# o = Okt()
+o = Okt()
 maxlen = 300
 
 sp = spm.SentencePieceProcessor()
 vocab_file = 'ilbe_ht_spm_model/ilbe_spm.model'
 sp.load(vocab_file)
 
-gender = np.load('emb/gender_emb.npy')
-society = np.load('emb/soc_emb.npy')
-age = np.load('emb/age_emb.npy')
-toxic = np.load('emb/toxic_emb.npy')
-total = np.load('emb/total_emb.npy')
+# gender = np.load('emb/gender_emb.npy')
+# society = np.load('emb/soc_emb.npy')
+# age = np.load('emb/age_emb.npy')
+# toxic = np.load('emb/toxic_emb.npy')
+# total = np.load('emb/total_emb.npy')
 # age = np.load('emb/age.npy')
 # location = np.load('emb/location.npy')
 # gender = np.load('emb/gen_sent.npy')
 model = tf.keras.models.load_model('6_hate_speech_model')
 model.load_weights('6_hate_speech_weights')
-# model = tf.saved_model.load('1_hate_speech_model')
+
+
+# inputs = tf.keras.layers.Input(shape=(maxlen),name='inputs:0',dtype=tf.int64)
+# x = inputs(np.array([x]))
+# @tf.function
+# def inference(model,x):
+#     gen,soc,toxic,age = model(x)
+#     # pred = model(x)
+#     # print(pred.shape)
+#     return [gen,soc,toxic,age]
+# print(gen.shape)
+# model.build((1,maxlen))
 # model.summary()
-# model.build((None,maxlen))
+# inputs = tf.keras.layers.Input(shape=(maxlen),name='inputs:0',dtype=tf.int64)
+# gen, soc, toxic, age = model(inputs)
+# model = tf.keras.Model(inputs=inputs, outputs=[gen,soc,toxic,age])
+# model.summary()
+# model = tf.saved_model.load('1_hate_speech_model')
+model.summary()
+
 tag = ['N','V']
 # from konlpy.tag import Okt
 # o = Okt()
@@ -37,10 +57,13 @@ while True:
     x = input("input sentence: ")
     if x.lower() == 'exit':
         break
+    # pos = o.pos(x)
+    # x = ['/'.join(p) for p in pos]
     x = analysis(x)
-    print(x)
-    x = x[0].split(' ')
     # print(x)
+    x = x[0].split(' ')
+    print(x)
+
     # continue
     temp = []
     pos = []
@@ -108,15 +131,11 @@ while True:
     x = x + [0] * (maxlen - len(x))
     x = x[:maxlen]
     x = np.array([x])
+    print(x.shape)
     # print(np.array(x).shape)
-    inputs = tf.keras.layers.Input(shape=(maxlen),name='inputs:0',dtype=tf.int64)
-    # x = inputs(np.array([x]))
-    gen,soc,toxic,age = model(inputs)
-    # print(gen.shape)
-    model = tf.keras.Model(inputs=inputs, outputs=[gen,soc,toxic,age])
-    model.summary()
-    gen,soc,toxic,age = model(x)
-    print("gen: ",gen,"soc: ",soc,"toxic: ",toxic,"age: ",age)
+
+    gen,soc,toxic,age = model(x)#inference(model,x)#model(x)
+    print("gen: ",gen.numpy(),"soc: ",soc.numpy(),"toxic: ",toxic.numpy(),"age: ",age.numpy())
     # print(pred)
     continue
     # exit()

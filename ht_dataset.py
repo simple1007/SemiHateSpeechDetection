@@ -26,6 +26,10 @@ def to_numpy(file,spm,batch_size=32):
             soc = l[4]
             toxic = l[5]
             age = l[6]
+
+            line_ = line.strip().split()
+            if len(line_) <= 3:
+                continue
             # y_soc = l[3]
             # y_soc = l[3]
             # y_age = l[4]

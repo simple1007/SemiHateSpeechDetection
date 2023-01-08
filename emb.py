@@ -258,7 +258,7 @@ def make_dic(file_pre):
             
         seed_dic /= word_count
         np.save('emb/'+file_pre,seed_dic)
-# make_dic('age')
+make_dic('age')
 # exit()
 make_dic('gender')
 make_dic('soc')
@@ -441,8 +441,8 @@ import re
 csvf = open('dataset.csv','w',encoding='utf-8', newline='')
 wr = csv.writer(csvf)
 
-def labeling(sim):
-    if sim < 0.5:
+def labeling(sim,comp=0.28):
+    if sim < comp:
         return 0
     else:
         return 1
@@ -489,5 +489,5 @@ with open('preprocessing/ht_x.txt',encoding='utf-8') as htx:
                     continue
 
 
-                wr.writerow([' '.join(l),' '.join(o),labeling(cos_sim(total,_worddic)),labeling(cos_sim(gen,_worddic)),labeling(cos_sim(soc,_worddic)),labeling(cos_sim(txc,_worddic)),labeling(cos_sim(age,_worddic))])
+                wr.writerow([' '.join(l),' '.join(o),labeling(cos_sim(total,_worddic),comp=0.35),labeling(cos_sim(gen,_worddic),comp=0.30),labeling(cos_sim(soc,_worddic),comp=0.28),labeling(cos_sim(txc,_worddic),comp=0.35),labeling(cos_sim(age,_worddic),comp=0.35)])
 csvf.close()
