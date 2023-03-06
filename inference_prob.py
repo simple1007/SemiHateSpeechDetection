@@ -2,17 +2,23 @@ import sys
 # sys.path.append('D:/SentenceSimilarityPredict/HeadTail_Tokenizer_POSTagger')
 # sys.path.append('D:/SentenceSimilarityPredict')
 import os
-os.environ['ROOT']='D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger'
-sys.path.append('D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger')
+file = __file__
+file = os.path.abspath(file)
+root = file.split(os.sep)
+root = os.sep.join(root[:-1]) + os.sep + 'HeadTail_Tokenizer_POSTagger' + os.sep + 'bin'
+# root = os.sep.join(root)
+print(root)
+os.environ['ROOT']=root#'D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger'
+sys.path.append(root)#'D:\SemiHateSpeechDetection\SemiHateSpeechDetection\HeadTail_Tokenizer_POSTagger')
 from utils.utils import cos_sim#cos_sim_per as cos_sim
-from konlpy.tag import Okt
-from HeadTail_Tokenizer_POSTagger.head_tail_distil import analysis
+# from konlpy.tag import Okt
+from HeadTail_Tokenizer_POSTagger.bin.head_tail_distil import analysis
 
 import tensorflow as tf
 import numpy as np
 import sentencepiece as spm
 
-o = Okt()
+# o = Okt()
 maxlen = 300
 
 sp = spm.SentencePieceProcessor()
@@ -27,8 +33,8 @@ sp.load(vocab_file)
 # age = np.load('emb/age.npy')
 # location = np.load('emb/location.npy')
 # gender = np.load('emb/gen_sent.npy')
-model = tf.keras.models.load_model('6_hate_speech_model')
-model.load_weights('6_hate_speech_weights')
+model = tf.keras.models.load_model('7_hate_speech_model')
+model.load_weights('7_hate_speech_weights')
 
 
 # inputs = tf.keras.layers.Input(shape=(maxlen),name='inputs:0',dtype=tf.int64)
@@ -49,7 +55,7 @@ model.load_weights('6_hate_speech_weights')
 # model = tf.saved_model.load('1_hate_speech_model')
 model.summary()
 
-tag = ['N','V']
+tag = ['N']#,'V']
 # from konlpy.tag import Okt
 # o = Okt()
 # ['▁나', '▁밥', '▁학교']
@@ -80,22 +86,22 @@ while True:
         
         if xx_[1][0] in tag:
             # temp.append(xx_[0])
-            if xx_[1][0] == 'V' and len(xx_[0]) > 1:# and (xx__[0][-1] == '다' or xx_[0][-1] == '했' or xx_[0][-1] == '하' or xx_[0][-1] == '한') and len(xx_[0]) >= 1: #and (xx_[0][-1] == '하' or xx_[0][-1] == '했' ):
-                # if nv_chk > -1 and len(temp[-1]) == 1:
-                #     temp[-1] = temp[-1] + '_' + xx_[0]
-                #     pos[-1] = pos[-1] + '_V'
-                #     # nv_dict[nv_chk] = nv_chk+1
-                # else:# xx_[1][0] == 'V':
-                #     if len(xx_[0]) == 1:
-                #         continue
-                #     temp.append(xx_[0])
-                #     pos.append(xx_[1][0])
-                # continue
-                temp.append(xx_[0])
-                pos.append(xx_[1][0])
-                nv_chk = -1
+            # if xx_[1][0] == 'V' and len(xx_[0]) > 1:# and (xx__[0][-1] == '다' or xx_[0][-1] == '했' or xx_[0][-1] == '하' or xx_[0][-1] == '한') and len(xx_[0]) >= 1: #and (xx_[0][-1] == '하' or xx_[0][-1] == '했' ):
+            #     # if nv_chk > -1 and len(temp[-1]) == 1:
+            #     #     temp[-1] = temp[-1] + '_' + xx_[0]
+            #     #     pos[-1] = pos[-1] + '_V'
+            #     #     # nv_dict[nv_chk] = nv_chk+1
+            #     # else:# xx_[1][0] == 'V':
+            #     #     if len(xx_[0]) == 1:
+            #     #         continue
+            #     #     temp.append(xx_[0])
+            #     #     pos.append(xx_[1][0])
+            #     # continue
+            #     temp.append(xx_[0])
+            #     pos.append(xx_[1][0])
+            #     nv_chk = -1
 
-            elif xx_[1][0] == 'N':
+            if xx_[1][0] == 'N':
                 if len(xx_[0]) == 1:
                     continue
                 # if len(temp) !=0 and '_' not in temp[-1] and pos[-1] == 'N' and len(temp[-1]) == 1:
@@ -131,11 +137,11 @@ while True:
     x = x + [0] * (maxlen - len(x))
     x = x[:maxlen]
     x = np.array([x])
-    print(x.shape)
+    # print(x.shape)
     # print(np.array(x).shape)
-
-    gen,soc,toxic,age = model(x)#inference(model,x)#model(x)
-    print("gen: ",gen.numpy(),"soc: ",soc.numpy(),"toxic: ",toxic.numpy(),"age: ",age.numpy())
+    # print(x)
+    hate,gen,soc = model.predict(x)#inference(model,x)#model(x)
+    print("hate: ",hate,"gen: ",gen,"soc: ",soc)
     # print(pred)
     continue
     # exit()

@@ -50,11 +50,14 @@ class ModelBuild(tf.keras.Model):
 
         self.dense = Dense(32, activation = 'relu')#(multiply)
 
-        self.result1 = Dense(1,name='gen',activation='sigmoid')#(bilstm_)
-        self.result2 = Dense(1,name='soc',activation='sigmoid')
-        self.result3 = Dense(1,name='toxic',activation='sigmoid')
-        self.result4 = Dense(1,name='age',activation='sigmoid')
-
+        self.result1 = Dense(1,name='hate',activation='sigmoid')
+        self.result2 = Dense(1,name='gen',activation='sigmoid')#,activation='sigmoid')#(bilstm_)
+        self.result3 = Dense(1,name='soc',activation='sigmoid')#,activation='sigmoid')
+        # self.result3 = Dense(1,name='toxic')#,activation='sigmoid')
+        # # self.result4 = Dense(1,name='age',activation='sigmoid')
+        # self.result4 = Dense(1,name='aperson')#,activation='sigmoid')
+        # self.result5 = Dense(1,name='children')#,activation='sigmoid')
+        # self.result6 = Dense(1,name='grand')#,activation='sigmoid')
     def build(self, input_shape):
         super(ModelBuild, self).build(input_shape)
 
@@ -78,7 +81,7 @@ class ModelBuild(tf.keras.Model):
         a = self.dense(a)
         # print(a.shape)
 
-        return tf.squeeze(self.result1(a)), tf.squeeze(self.result2(a)), tf.squeeze(self.result3(a)), tf.squeeze(self.result4(a))
+        return tf.squeeze(self.result1(a)), tf.squeeze(self.result2(a)), tf.squeeze(self.result3(a))#, tf.squeeze(self.result4(a)), tf.squeeze(self.result5(a)), tf.squeeze(self.result6(a))
         # model = tf.keras.models.Model(inputs=[input, input2], outputs=output)
 
         # return output
@@ -93,22 +96,35 @@ if True:
     model.summary()
 
     # loss_obj_reg = tf.keras.losses.MeanAbsoluteError()
+    loss_hate = tf.keras.losses.BinaryCrossentropy()
     loss_gen = tf.keras.losses.BinaryCrossentropy()#MeanSquaredError()
     loss_soc = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
-    loss_toxic = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
-    loss_age = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+    # loss_toxic = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+    # # loss_age = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+    # loss_aperson = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+    # loss_children = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+    # loss_grand = tf.keras.losses.BinaryCrossentropy()#.MeanSquaredError()
+
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
+    mean_hate = tf.keras.metrics.Mean(name='hate loss')
     mean_gen = tf.keras.metrics.Mean(name='gen loss')
     mean_soc = tf.keras.metrics.Mean(name='soc loss')
-    mean_toxic = tf.keras.metrics.Mean(name='toxic loss')
-    mean_age = tf.keras.metrics.Mean(name='age loss')
+    # mean_toxic = tf.keras.metrics.Mean(name='toxic loss')
+    # # mean_age = tf.keras.metrics.Mean(name='age loss')
+    # mean_aperson = tf.keras.metrics.Mean(name='aperson loss')
+    # mean_children = tf.keras.metrics.Mean(name='children loss')
+    # mean_grand = tf.keras.metrics.Mean(name='grand loss')
 
+    error_hate_mae = tf.keras.metrics.BinaryAccuracy()
     error_gen_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
     error_soc_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
-    error_toxic_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
-    error_age_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
+    # error_toxic_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
+    # # error_age_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
+    # error_aperson_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
+    # error_children_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
+    # error_grand_mae = tf.keras.metrics.BinaryAccuracy()#MeanAbsoluteError()
     # error_soc_mae = tf.keras.metrics.SparseCategoricalAccuracy()
     min = 10.0# [10.0,10.0,10.0,10.0]
     ds = dataset_ht()
@@ -116,26 +132,34 @@ if True:
     @tf.function
     def train_step(inputs, y):
         with tf.GradientTape() as tape:
-            gen,soc,toxic,age = model(inputs)
+            hate, gen,soc = model(inputs)
             # reg_loss = loss_obj_reg(y_reg, pred_reg)
             # cat_loss = loss_obj_cat(y_cat, pred_cat)
-            genLoss = loss_gen(y[:,0],gen)
-            socLoss = loss_soc(y[:,1],soc)
-            toxicLoss = loss_toxic(y[:,2],toxic)# = tf.keras.losses.MeanSquaredError()
-            ageLoss = loss_age(y[:,3],age)# = tf.keras.losses.MeanSquaredError()
-
-        gradients = tape.gradient([genLoss,socLoss,toxicLoss,ageLoss], model.trainable_variables)
+            genLoss = loss_gen(y[:,1],gen)
+            socLoss = loss_soc(y[:,2],soc)
+            hateLoss = loss_hate(y[:,0],hate)# = tf.keras.losses.MeanSquaredError()
+            # ageLoss = loss_age(y[:,3],age)# = tf.keras.losses.MeanSquaredError()
+            # apersonLoss = loss_aperson(y[:,3],aperson)
+            # childrenLoss = loss_children(y[:,4],children)
+            # grandLoss = loss_grand(y[:,5],grand)
+        gradients = tape.gradient([hateLoss,genLoss,socLoss], model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        mean_hate(hateLoss)
         mean_gen(genLoss)
         mean_soc(socLoss)
-        mean_toxic(toxicLoss)
-        mean_age(ageLoss)
+        # mean_toxic(toxicLoss)
+        # # mean_age(ageLoss)
+        # mean_aperson(apersonLoss)
+        # mean_children(childrenLoss)
+        # mean_grand(grandLoss)
 
-        error_gen_mae.update_state(y[:,0],gen)
-        error_soc_mae.update_state(y[:,1],soc)
-        error_toxic_mae.update_state(y[:,2],toxic)
-        error_age_mae.update_state(y[:,3],age)
-
+        error_gen_mae.update_state(y[:,1],gen)
+        error_soc_mae.update_state(y[:,2],soc)
+        error_hate_mae.update_state(y[:,0],hate)
+        # error_age_mae.update_state(y[:,3],age)
+        # error_aperson_mae.update_state(y[:,3],aperson)
+        # error_children_mae.update_state(y[:,4],children)
+        # error_grand_mae.update_state(y[:,5],grand)
     from tqdm import tqdm
     running_loss = 0.0
     for epoch in range(EPOCH):
@@ -145,28 +169,40 @@ if True:
             train_step(xx, yy)
 
         template = 'Epoch {:>2}, mae_gen: {:<4.2f},' \
-                ' mae_soc: {:>4.2f}, mae_toxic: {:>4.2%}, mae_age: {:>4.2%}' \
-                ' mean_gen: {:>4.2f}, mean_soc: {:>4.2f}, mean_toxic: {:>4.2f}, mean_age: {:>4.2f}'
+                ' mae_soc: {:>4.2f}, mae_hate: {:>4.2%},'\
+                ' mean_gen: {:>4.2f}, mean_soc: {:>4.2f}, mean_hate: {:>4.2f}'#, mean_aperson: {:>4.2f}'
         print(template.format(epoch+1,
             error_gen_mae.result().numpy(),
             error_soc_mae.result().numpy(),
-            error_toxic_mae.result().numpy(),
-            error_age_mae.result().numpy(),
+            error_hate_mae.result().numpy(),
+            # error_age_mae.result().numpy(),
+            # error_aperson_mae.result().numpy(),
+            # error_children_mae.result().numpy(),
+            # error_grand_mae.result().numpy(),
             mean_gen.result(),
             mean_soc.result(),
-            mean_toxic.result(),
-            mean_age.result()
+            mean_hate.result()#,
+            # mean_age.result()
+            # mean_aperson.result(),
+            # mean_children.result(),
+            # mean_grand.result()
         ))
-        running_loss = mean_gen.result() + mean_soc.result() + mean_toxic.result() + mean_age.result()
-        running_loss = running_loss / 4.0
+        running_loss = mean_gen.result() + mean_soc.result() + mean_hate.result() #+ mean_aperson.result() + mean_children.result() + mean_grand.result()
+        running_loss = running_loss / 3.0
         error_gen_mae.reset_states()
         error_soc_mae.reset_states()
-        error_toxic_mae.reset_states()
-        error_age_mae.reset_states()
+        error_hate_mae.reset_states()
+        # error_age_mae.reset_states()
+        # error_aperson_mae.reset_states()
+        # error_children_mae.reset_states()
+        # error_grand_mae.reset_states()
         mean_gen.reset_states()
         mean_soc.reset_states()
-        mean_toxic.reset_states()
-        mean_age.reset_states()
+        mean_hate.reset_states()
+        # mean_age.reset_states()
+        # mean_aperson.reset_states()
+        # mean_children.reset_states()
+        # mean_grand.reset_states()
         print()
         print('total loss {:4.2f}'.format(running_loss))
         running_loss = 0.0
@@ -177,51 +213,88 @@ if True:
             xx, yy = next(ds)
             # print(xx.shape,yy.shape)
             # model.compile(metrics="mae",loss="mse")
-            gen,soc,toxic,age = model(xx)
+            hate,gen,soc = model(xx)
             # print(gen.shape)
-            genLoss = loss_gen(yy[:,0],gen)
-            socLoss = loss_soc(yy[:,1],soc)
-            toxicLoss = loss_toxic(yy[:,2],toxic)# = tf.keras.losses.MeanSquaredError()
-            ageLoss = loss_age(yy[:,3],age)
+            genLoss = loss_gen(yy[:,1],gen)
+            socLoss = loss_soc(yy[:,2],soc)
+            hateLoss = loss_hate(yy[:,0],hate)# = tf.keras.losses.MeanSquaredError()
+            # ageLoss = loss_age(yy[:,3],age)
+            # apersonLoss = loss_aperson(yy[:,3],aperson)
+            # childrenLoss = loss_children(yy[:,4],children)
+            # grandLoss = loss_grand(yy[:,5],grand)
 
             mean_gen(genLoss)
             mean_soc(socLoss)
-            mean_toxic(toxicLoss)
-            mean_age(ageLoss)
+            mean_hate(hateLoss)
+            # mean_age(ageLoss)
+            # mean_aperson(apersonLoss)
+            # mean_children(childrenLoss)
+            # mean_grand(grandLoss)
 
-            error_gen_mae.update_state(yy[:,0],gen)
-            error_soc_mae.update_state(yy[:,1],soc)
-            error_toxic_mae.update_state(yy[:,2],toxic)
-            error_age_mae.update_state(yy[:,3],age)
+            error_gen_mae.update_state(yy[:,1],gen)
+            error_soc_mae.update_state(yy[:,2],soc)
+            error_hate_mae.update_state(yy[:,0],hate)
+            # error_age_mae.update_state(yy[:,3],age)
+            # error_aperson_mae.update_state(yy[:,3],aperson)
+            # error_children_mae.update_state(yy[:,4],children)
+            # error_grand_mae.update_state(yy[:,5],grand)
         
+        # template = 'Epoch {:>2}, mae_gen: {:<4.2f},' \
+        #         ' mae_soc: {:>4.2f}, mae_toxic: {:>4.2%}, mae_age: {:>4.2%}' \
+        #         ' mean_gen: {:>4.2f}, mean_soc: {:>4.2f}, mean_toxic: {:>4.2f}, mean_age: {:>4.2f}'
+        # print(template.format(epoch+1,
+        #     error_gen_mae.result().numpy(),
+        #     error_soc_mae.result().numpy(),
+        #     error_toxic_mae.result().numpy(),
+        #     error_age_mae.result().numpy(),
+        #     mean_gen.result(),
+        #     mean_soc.result(),
+        #     mean_toxic.result(),
+        #     mean_age.result()
+        # ))
         template = 'Epoch {:>2}, mae_gen: {:<4.2f},' \
-                ' mae_soc: {:>4.2f}, mae_toxic: {:>4.2%}, mae_age: {:>4.2%}' \
-                ' mean_gen: {:>4.2f}, mean_soc: {:>4.2f}, mean_toxic: {:>4.2f}, mean_age: {:>4.2f}'
+                ' mae_soc: {:>4.2f}, mae_hate: {:>4.2%},'\
+                ' mean_gen: {:>4.2f}, mean_soc: {:>4.2f}, mean_hate: {:>4.2f}'#, mean_aperson: {:>4.2f}'
         print(template.format(epoch+1,
             error_gen_mae.result().numpy(),
             error_soc_mae.result().numpy(),
-            error_toxic_mae.result().numpy(),
-            error_age_mae.result().numpy(),
+            error_hate_mae.result().numpy(),
+            # error_age_mae.result().numpy(),
+            # error_aperson_mae.result().numpy(),
+            # error_children_mae.result().numpy(),
+            # error_grand_mae.result().numpy(),
             mean_gen.result(),
             mean_soc.result(),
-            mean_toxic.result(),
-            mean_age.result()
+            mean_hate.result(),
+            # mean_age.result()
+            # mean_aperson.result(),
+            # mean_children.result(),
+            # mean_grand.result()
         ))
-        val_loss = mean_gen.result() + mean_soc.result() + mean_toxic.result() + mean_age.result()
+        val_loss = mean_gen.result() + mean_soc.result() + mean_hate.result()# + mean_aperson.result() + mean_children.result() + mean_grand.result()
         # val_loss = val_loss / 4.0
-        val_mae = error_gen_mae.result().numpy() + error_soc_mae.result().numpy() + error_toxic_mae.result().numpy() + error_age_mae.result().numpy()
+        val_mae = error_gen_mae.result().numpy() + error_soc_mae.result().numpy() + error_hate_mae.result().numpy()# + error_aperson_mae.result().numpy() + error_children_mae.result().numpy() + error_grand_mae.result().numpy()
         
         print('val_loss: {}'.format(val_loss))
         print('val_mae: {}'.format(val_mae))
         error_gen_mae.reset_states()
         error_soc_mae.reset_states()
-        error_toxic_mae.reset_states()
-        error_age_mae.reset_states()
+        error_hate_mae.reset_states()
+        # error_age_mae.reset_states()
+        # mean_gen.reset_states()
+        # mean_soc.reset_states()
+        # mean_toxic.reset_states()
+        # mean_age.reset_states()
+        # error_aperson_mae.reset_states()
+        # error_children_mae.reset_states()
+        # error_grand_mae.reset_states()
         mean_gen.reset_states()
         mean_soc.reset_states()
-        mean_toxic.reset_states()
-        mean_age.reset_states()
-        
+        mean_hate.reset_states()
+        # mean_age.reset_states()
+        # mean_aperson.reset_states()
+        # mean_children.reset_states()
+        # mean_grand.reset_states()
         # if epoch == 0:
         #     min = val_loss
         if val_loss < min:

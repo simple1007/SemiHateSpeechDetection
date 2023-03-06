@@ -151,7 +151,7 @@ if len(sys.argv) >= 2 and sys.argv[1] == "emb":
                     words = []
                 f.close()
                 exit()
-            sim_w = model.wv.most_similar_cosmul(word,topn=100)
+            sim_w = model.wv.most_similar_cosmul(word,topn=20)
             words.append(['#'+word,0.0])
             print(sim_w)
             for sw in sim_w:
@@ -258,13 +258,43 @@ def make_dic(file_pre):
             
         seed_dic /= word_count
         np.save('emb/'+file_pre,seed_dic)
+
+def make_dic_all(file=['age','toxic','aperson','children','grand']):
+    word_count = 0
+    seed_dic = np.zeros(300)
+    _duplicate = {}
+    for file_pre in file:
+        with open('dictionary/'+file_pre+'/extend/dictionary_'+file_pre+'.txt',encoding='utf-8') as dic_word:
+            for word in dic_word:
+                if word.startswith('//'):
+                    continue
+                
+                word = word.replace('#','').strip().split('\t')            
+
+                if word[0] not in _duplicate:
+                    _duplicate[word[0]] = True
+        
+    for word in _duplicate.keys():
+        try:
+            seed_dic += model.wv[word]
+        except:
+            continue
+        word_count += 1
+        # _duplicate[word[0]] = True
+        # print(word)
+        # print(model.wv[word[0]])
+        
+    seed_dic /= word_count
+    np.save('emb/all',seed_dic)
 make_dic('age')
 # exit()
 make_dic('gender')
 make_dic('soc')
 make_dic('toxic')
-
-
+make_dic('aperson')
+make_dic('children')
+make_dic('grand')
+make_dic_all()
 ageList = [
     '틀딱'
     ,'박사모'
@@ -429,7 +459,12 @@ gen = np.load('emb/gender.npy')
 soc = np.load('emb/soc.npy')
 txc = np.load('emb/toxic.npy')
 age = np.load('emb/age.npy')
+apr = np.load('emb/aperson.npy')
+chi = np.load('emb/children.npy')
+gra = np.load('emb/grand.npy')
+
 tt = np.load('emb/total.npy')
+all = np.load('emb/all.npy')
 
 word = {}
 word['[PAD]'] = 0
@@ -442,6 +477,7 @@ csvf = open('dataset.csv','w',encoding='utf-8', newline='')
 wr = csv.writer(csvf)
 
 def labeling(sim,comp=0.28):
+    # return sim
     if sim < comp:
         return 0
     else:
@@ -449,25 +485,27 @@ def labeling(sim,comp=0.28):
 
 with open('preprocessing/ht_x.txt',encoding='utf-8') as htx:
     with open('preprocessing/ht_origin.txt',encoding='utf-8') as htori:
-        with open('preprocessing/ht_origin_v.txt',encoding='utf-8') as htori2:
-            for l, o, o2 in zip(htx,htori,htori2):
+        # with open('preprocessing/ht_origin_v.txt',encoding='utf-8') as htori2:
+            # for l, o, o2 in zip(htx,htori,htori2):
+            for l, o in zip(htx,htori):
                 l = l.strip()
                 l = re.sub(' +',' ',l)
                 l = l.split(' ')
 
                 o = o.strip()
-                o2 = o2.strip()
-                if o == '' or o2 == '' or l == '':
+                # o2 = o2.strip()
+                # if o == '' or o2 == '' or l == '':
+                if o == '' or l == '':
                     # print('1',o)
                     continue
                 o = re.sub(' +',' ',o)
                 o = o.split(' ')
 
-                o2 = re.sub(' +',' ',o2)
-                o2 = o2.split(' ')
+                # o2 = re.sub(' +',' ',o2)
+                # o2 = o2.split(' ')
 
                 temp_nouns = []
-                for noun in o2:
+                for noun in l:
                     try:
                         if noun not in word:
                             word[noun] = wordindex
@@ -489,5 +527,5 @@ with open('preprocessing/ht_x.txt',encoding='utf-8') as htx:
                     continue
 
 
-                wr.writerow([' '.join(l),' '.join(o),labeling(cos_sim(total,_worddic),comp=0.35),labeling(cos_sim(gen,_worddic),comp=0.30),labeling(cos_sim(soc,_worddic),comp=0.28),labeling(cos_sim(txc,_worddic),comp=0.35),labeling(cos_sim(age,_worddic),comp=0.35)])
+                wr.writerow([' '.join(l),' '.join(o),labeling(cos_sim(all,_worddic),comp=0.35),labeling(cos_sim(gen,_worddic),comp=0.30),labeling(cos_sim(soc,_worddic),comp=0.28)])#,labeling(cos_sim(txc,_worddic),comp=0.35),labeling(cos_sim(age,_worddic),comp=0.35),labeling(cos_sim(apr,_worddic),comp=0.18),labeling(cos_sim(chi,_worddic),comp=0.35),labeling(cos_sim(gra,_worddic),comp=0.35)])
 csvf.close()
